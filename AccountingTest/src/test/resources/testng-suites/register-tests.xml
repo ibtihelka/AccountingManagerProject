@@ -1,0 +1,9 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+
+<suite name="Register Tests Suite">
+    <test name="Register Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.auth.RegisterTest" />
+        </classes>
+    </test>
+</suite>

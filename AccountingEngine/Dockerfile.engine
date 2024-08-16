@@ -1,0 +1,10 @@
+FROM eclipse-temurin:17-jdk as accounting_engine
+
+RUN apt-get update \
+    && apt-get install -y sudo \
+    && apt-get update \
+    && sudo apt install -y tesseract-ocr \
+    && sudo apt-get install tesseract-ocr-fra \
+    && mkdir -p /tmp/accounting_engine \
+    && mkdir -p /tmp/accounting_engine/source_xml \
+    && mkdir -p /tmp/accounting_engine/transformed_xml

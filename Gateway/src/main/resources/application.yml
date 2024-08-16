@@ -1,0 +1,42 @@
+server:
+  port: 8089
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+
+spring:
+  application:
+    name: gateway-service
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4200"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      routes:
+        - id: authModule
+          uri: lb://ACCOUNTING-AUTH
+          predicates:
+            - Path=/api/v1/auth/**, /v3/api-docs/auth
+        - id: bankStatementEngineModule
+          uri: lb://BANK-STATEMENT-ENGINE
+          predicates:
+            - Path=/api/v1/bank-statement-engine/**, /v3/api-docs/bank-statement-engine
+        - id: engineModule
+          uri: lb://ACCOUNTING-ENGINE
+          predicates:
+            - Path=/api/v1/invoice-engine/**, /v3/api-docs/invoice-engine
+        - id: daoModule
+          uri: lb://ACCOUNTING-MANAGEMENT
+          predicates:
+            - Path=/api/v1/management/**, /v3/api-docs/management

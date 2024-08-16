@@ -1,0 +1,180 @@
+version: '3'
+services:
+
+  mysql:
+    container_name: mysql-db
+    build:
+      context: ./DB
+      dockerfile: Dockerfile.mysql
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: true
+      MYSQL_DATABASE: accounting_manager
+    ports:
+      - "3306:3306"
+    networks:
+      - accounting-manager-net
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  php:
+    container_name: php73
+    networks:
+      - accounting-manager-net
+    depends_on:
+      - mysql
+    image: php:7.3-apache
+    ports:
+      - 88:88
+
+  phpmya:
+    image: phpmyadmin/phpmyadmin:5.2.1
+    container_name: phpmyadmin
+    networks:
+      - accounting-manager-net
+    environment:
+      PMA_ARBITRARY: 1
+      PMA_HOST: mysql
+      UPLOAD_LIMIT: 20M
+    ports:
+      - 8899:80
+
+  gui:
+    container_name: GUI
+    networks:
+      - accounting-manager-net
+    build:
+      context: ./gui
+      dockerfile: ./Dockerfile.angular
+    ports:
+      - "4200:80"
+
+  discovery:
+    image: eclipse-temurin:17-jdk
+    ports:
+      - "8761:8761"
+    networks:
+      - accounting-manager-net
+    environment:
+      - eureka.client.service-url.defaultZone=http://service-registration:8761/eureka
+    volumes:
+      - ./Discovery/target/Discovery-0.0.1-SNAPSHOT.jar:/app/Discovery-0.0.1-SNAPSHOT.jar
+    command: ["java", "-jar", "/app/Discovery-0.0.1-SNAPSHOT.jar"]
+    depends_on:
+      - mysql
+    links:
+      - mysql
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:8761"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  gateway:
+    image: eclipse-temurin:17-jdk
+    ports:
+      - "8080:8080"
+    networks:
+      - accounting-manager-net
+    environment:
+      - eureka.client.service-url.defaultZone=http://host.docker.internal:8761/eureka/
+    volumes:
+      - ./Gateway/target/Gateway-0.0.1-SNAPSHOT.jar:/app/Gateway-0.0.1-SNAPSHOT.jar
+    command: ["java", "-jar", "/app/Gateway-0.0.1-SNAPSHOT.jar"]
+    depends_on:
+      discovery:
+        condition: service_healthy
+    links:
+      - discovery
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:8080/actuator"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  accounting_auth:
+    image: eclipse-temurin:17-jdk
+    ports:
+      - "8082:8082"
+    environment:
+      - spring.datasource.url=jdbc:mysql://mysql:3306/accounting_manager?allowPublicKeyRetrieval=true
+      - eureka.client.service-url.defaultZone=http://host.docker.internal:8761/eureka/
+    networks:
+      - accounting-manager-net
+    volumes:
+      - ./AccountingAuth/target/AccountingAuth-0.0.1-SNAPSHOT.jar:/app/AccountingAuth-0.0.1-SNAPSHOT.jar
+    command: ["java", "-jar", "/app/AccountingAuth-0.0.1-SNAPSHOT.jar"]
+    depends_on:
+      gateway:
+        condition: service_healthy
+    links:
+      - gateway
+
+
+  accounting_management:
+    image: eclipse-temurin:17-jdk
+    ports:
+      - "8083:8083"
+    environment:
+      - spring.datasource.url=jdbc:mysql://mysql:3306/accounting_manager?allowPublicKeyRetrieval=true
+      - eureka.client.service-url.defaultZone=http://host.docker.internal:8761/eureka/
+    networks:
+      - accounting-manager-net
+    volumes:
+      - ./AccountingManagement/target/AccountingManagement-0.0.1-SNAPSHOT.jar:/app/AccountingManagement-0.0.1-SNAPSHOT.jar
+    command: ["java", "-jar", "/app/AccountingManagement-0.0.1-SNAPSHOT.jar"]
+    depends_on:
+      gateway:
+        condition: service_healthy
+    links:
+      - gateway
+
+  accounting_engine:
+    build:
+      context: ./AccountingEngine
+      dockerfile: Dockerfile.engine
+    ports:
+      - "8081:8081"
+    environment:
+      - spring.datasource.url=jdbc:mysql://mysql:3306/accounting_manager?allowPublicKeyRetrieval=true
+      - eureka.client.service-url.defaultZone=http://host.docker.internal:8761/eureka/
+    networks:
+      - accounting-manager-net
+    volumes:
+      - ./AccountingEngine/target/AccountingEngine-0.0.1-SNAPSHOT.jar:/app/AccountingEngine-0.0.1-SNAPSHOT.jar
+      - ./AccountingCore/target/AccountingCore-0.0.1-SNAPSHOT.jar:/app/AccountingCore-0.0.1-SNAPSHOT.jar
+      - ./AccountingCore/src/main/resources:/app/src/main/resources
+    command: ["java", "-jar", "/app/AccountingEngine-0.0.1-SNAPSHOT.jar"]
+    depends_on:
+      gateway:
+        condition: service_healthy
+    links:
+      - gateway
+
+  bank_statement_engine:
+    build:
+      context: ./BankStatementEngine
+      dockerfile: Dockerfile.engine
+    ports:
+      - "8084:8084"
+    environment:
+      - spring.datasource.url=jdbc:mysql://mysql:3306/accounting_manager?allowPublicKeyRetrieval=true
+      - eureka.client.service-url.defaultZone=http://host.docker.internal:8761/eureka/
+    networks:
+      - accounting-manager-net
+    volumes:
+      - ./BankStatementEngine/target/BankStatementEngine-0.0.1-SNAPSHOT.jar:/app/BankStatementEngine-0.0.1-SNAPSHOT.jar
+      - ./AccountingCore/target/AccountingCore-0.0.1-SNAPSHOT.jar:/app/AccountingCore-0.0.1-SNAPSHOT.jar
+      - ./AccountingCore/src/main/resources:/app/src/main/resources
+    command: ["java", "-jar", "/app/BankStatementEngine-0.0.1-SNAPSHOT.jar"]
+    depends_on:
+      gateway:
+        condition: service_healthy
+    links:
+      - gateway
+
+networks:
+  accounting-manager-net:
+    driver: bridge
+
+volumes:
+  mysql-data:

@@ -1,0 +1,25 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+
+<suite name="Bank Statement Tests Suite">
+    <parameter name="document-type" value="BANK_STATEMENT" />
+    <test name="Bank Statement Creation Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.document.DocumentCreationTest" />
+        </classes>
+    </test>
+    <test name="Bank Statement Process Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.document.DocumentProcessTest" />
+        </classes>
+    </test>
+    <test name="Bank Statement Update Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.document.DocumentUpdateTest" />
+        </classes>
+    </test>
+    <test name="Bank Statement Deletion Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.document.DocumentDeletionTest" />
+        </classes>
+    </test>
+</suite>

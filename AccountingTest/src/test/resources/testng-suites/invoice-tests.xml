@@ -1,0 +1,25 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+
+<suite name="Invoice Tests Suite">
+    <parameter name="document-type" value="INVOICE" />
+    <test name="Invoice Creation Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.document.DocumentCreationTest" />
+        </classes>
+    </test>
+    <test name="Invoice Process Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.document.DocumentProcessTest" />
+        </classes>
+    </test>
+    <test name="Invoice Update Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.document.DocumentUpdateTest" />
+        </classes>
+    </test>
+    <test name="Invoice Deletion Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.document.DocumentDeletionTest" />
+        </classes>
+    </test>
+</suite>

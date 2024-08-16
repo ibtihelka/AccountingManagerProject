@@ -1,0 +1,24 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+
+<suite name="Folder Tests Suite">
+    <test name="Folder Creation Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.folder.FolderCreationTest" />
+        </classes>
+    </test>
+    <test name="Folder Operations Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.folder.FolderOperationsTest" />
+        </classes>
+    </test>
+    <test name="Folder Update Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.folder.FolderUpdateTest" />
+        </classes>
+    </test>
+    <test name="Folder Deletion Tests">
+        <classes>
+            <class name="com.accounting_manager.accounting_manager.tests.folder.FolderDeletionTest" />
+        </classes>
+    </test>
+</suite>

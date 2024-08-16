@@ -1,0 +1,79 @@
+name: End-to-End Tests
+
+on:
+  push:
+    branches:
+      - github-actions-e2e-tests
+  pull_request:
+    branches:
+      - github-actions-e2e-tests
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        java-version: [17]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Free up some space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+    - name: Set up JDK ${{ matrix.java-version }}
+      uses: actions/setup-java@v3
+      with:
+        java-version: ${{ matrix.java-version }}
+        distribution: 'adopt'
+
+    - name: Install Chrome
+      run: |
+        sudo apt update
+        sudo apt install -y wget gnupg
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+        sudo apt update
+        sudo apt install -y google-chrome-stable
+
+    - name: Install Maven
+      run: sudo apt install -y maven
+
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Start containers
+      run: mvn clean install -DskipTests && docker-compose --profile github-actions up --build -d
+
+    - name: Wait for services to be healthy
+      run: sleep 180
+
+    - name: Get GUI container IP
+      id: get-gui-ip
+      run: echo "::set-output name=gui_ip::$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' GUI)"
+
+    - name: Update routes.properties with GUI URL
+      run: |
+        echo "baseUrl=http://${{ steps.get-gui-ip.outputs.gui_ip }}" > ./AccountingTest/src/test/resources/env/local.properties
+
+    - name: test
+      run: |
+        curl http://${{ steps.get-gui-ip.outputs.gui_ip }}
+
+    - name: Run e2e tests
+      run: |
+        cd ./AccountingTest
+        mvn clean test
+      env:
+        GUI_URL: http://${{ steps.get-gui-ip.outputs.gui_ip }}

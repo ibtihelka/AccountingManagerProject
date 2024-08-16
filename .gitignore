@@ -1,0 +1,15 @@
+*/.project
+*/.factorypath
+*/.settings/**
+*/target/**
+
+.idea
+
+*/mvnw
+*/mvnw.cmd
+*/.mvn/**
+/.settings/org.eclipse.core.resources.prefs
+
+AccountingTest/allure-results/*
+AccountingEngine/src/main/resources/tmp/**
+BankStatementEngine/src/main/resources/tmp/**
