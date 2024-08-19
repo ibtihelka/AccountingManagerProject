@@ -103,18 +103,19 @@ public class EngineService {
     public CompletableFuture<BankStatement> processInvoicesConcurrentlyUsingAbbyy(Long invoiceId) {
         CompletableFuture<BankStatement> future = new CompletableFuture<>();
         ProcessingSettings settings = new ProcessingSettings();
+
+        // Configurez les paramètres du moteur OCR Abbyy
         settings.setLanguage("French,English");
         settings.setTextType("normal,matrix,typewriter");
         settings.setProfile("documentConversion");
-        settings.setOutputFormat(ProcessingSettings.OutputFormat.xmlForCorrectedImage);
-        // Process each invoice concurrently here.
+        settings.setOutputFormat(ProcessingSettings.OutputFormat.xmlForCorrectedImage); // Définir le format de sortie XML
+
         Optional<BankStatement> invoiceOptional = bankStatementRepository.findById(invoiceId);
-        // Process the invoice using your accountant engine logic.
+
         if (invoiceOptional.isPresent()) {
-            // accountant engine logic goes here.
             byte[] imageprocess = invoiceOptional.get().getSourceImg();
-            URL url = null;
             try {
+                // Envoyer l'image au moteur Abbyy pour le traitement
                 Task task = restClient.processByteArrayImage(imageprocess, settings);
                 while (task.isTaskActive()) {
                     Thread.sleep(1000);
@@ -122,33 +123,53 @@ public class EngineService {
                     task = restClient.getTaskStatus(task.Id);
                     log.info("Task ID : " + task.Id);
                 }
-                // Si la tâche OCR est terminée, télécharger le fichier XML de sortie
+
                 if (task.Status == Task.TaskStatus.Completed) {
                     log.info("Getting Xml URL....");
-                    url = restClient.getURL(task);
+                    URL url = restClient.getURL(task);
+
+                    // Télécharger et sauvegarder le fichier XML
+                    Path xmlPath = Paths.get(xmlFiles, "source_xml", invoiceId + ".xml");
+                    try (InputStream inputStream = url.openStream()) {
+                        Files.copy(inputStream, xmlPath);
+                    }
+
+                    // Lire et traiter le fichier XML
+                    Dom4jXmlReader dom4jHandler = new Dom4jXmlReader();
+                    List<_Document> docs = dom4jHandler.readXml(xmlPath.toString()); // Utilisez readXml ici
+                    _Document s = docs.get(0);
+                    _Out<_Document[]> allDocuments = new _Out<>(docs.toArray(new _Document[docs.size()]));
+                    byte[] imageProcess = s.ByteArrayImage("png");
+
+                    BankStatement bankStatement = invoiceOptional.get();
+                    bankStatement.setDetectionImg(imageProcess);
+
+                    // Lire et stocker le contenu du fichier XML
+                    byte[] xmlBytes = Files.readAllBytes(xmlPath);
+                    log.info("XML content size: " + xmlBytes.length);
+                    bankStatement.setSourceXml(xmlBytes);
+
+                    // Sauvegarder l'entité BankStatement
+                    bankStatementRepository.save(bankStatement);
+
+                    MultiFacture multiFacture = new MultiFacture("output.xml", resourcesPath, "01021000", false, "sa", new LearningEngine());
+                    Facture facture = new Facture(multiFacture, 0, "output.xml");
+                    FactureInfo facture1 = facture.startProcessing(ProcessingOption.NONE, allDocuments);
+
+                    BankStatement inv = bankStatement.copyFromBankStatementInfo(facture1);
+                    inv = setProcessType(inv);
+                    future.complete(inv);
                 } else {
                     log.error("La tâche a échoué");
+                    future.complete(null);
                 }
-
-                // Créer un objet Dom4jHandler et lire le fichier XML de sortie avec lui.
-                List<_Document> docs = dom4jHandler.readXmlFromUrl(url);
-                _Document s = docs.get(0);
-                _Out<_Document[]> allDocuments = new _Out<>(docs.toArray(new _Document[docs.size()]));
-                imageprocess = s.ByteArrayImage("png");
-                invoiceOptional.get().setDetectionImg(imageprocess);
-                bankStatementRepository.save(invoiceOptional.get());
-                MultiFacture multiFacture = new MultiFacture("output.xml", resourcesPath, "01021000", false, "sa", new LearningEngine());
-                Facture facture = new Facture(multiFacture, 0, "output.xml");
-                FactureInfo facture1 = facture.startProcessing(ProcessingOption.NONE, allDocuments);
-
-                BankStatement inv = invoiceOptional.get().copyFromBankStatementInfo(facture1);
-                inv=setProcessType(inv);
-                future.complete(inv);
-                return future;
             } catch (Exception e) {
                 log.error("An error occurred while processing the image: " + e);
                 future.complete(null);
             }
+        } else {
+            log.error("BankStatement with ID " + invoiceId + " not found");
+            future.complete(null);
         }
 
         return future;
@@ -248,8 +269,8 @@ public class EngineService {
      */
     public CompletableFuture<BankStatement> processInvoicesConcurrentlyUsingOtherOCR(String selectedOcr, CompletableFuture<BankStatement> future, BankStatement bankStatement, String scanResult) throws Exception {
 
-        String sourceXmlFilePath = xmlFiles+ "/source_xml/" + bankStatement.getId() + ".xml";
-        String transformedXsltFilePath = xmlFiles+ "/transformed_xml/" + bankStatement.getId() + ".xml";
+        String sourceXmlFilePath = xmlFiles + "/source_xml/" + bankStatement.getId() + ".xml";
+        String transformedXsltFilePath = xmlFiles + "/transformed_xml/" + bankStatement.getId() + ".xml";
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -273,8 +294,11 @@ public class EngineService {
             } catch (Exception e) {
                 log.error("Error transforming xml file");
             }
-
         }
+
+        // Lire le contenu du fichier XML et le stocker dans l'entité BankStatement
+        byte[] xmlBytes = Files.readAllBytes(Paths.get(sourceXmlFilePath));
+        bankStatement.setSourceXml(xmlBytes); // Stocker le contenu XML dans l'attribut sourceXml
 
         // Créer un objet Dom4jHandler et lire le fichier XML de sortie avec lui.
         List<_Document> docs = dom4jHandler.readXml(transformedXsltFilePath);
@@ -283,17 +307,19 @@ public class EngineService {
         byte[] imageProcess = s.ByteArrayImage("png");
 
         bankStatement.setDetectionImg(imageProcess);
-        bankStatementRepository.save(bankStatement);
+        bankStatementRepository.save(bankStatement); // Enregistrer les modifications dans la base de données
         MultiFacture multiFacture = new MultiFacture(transformedXsltFilePath, resourcesPath, "01021000", false, "sa", new LearningEngine());
         Facture facture = new Facture(multiFacture, 0, transformedXsltFilePath);
         FactureInfo facture1 = facture.startProcessing(ProcessingOption.NONE, allDocuments);
         BankStatement inv = bankStatement.copyFromBankStatementInfo(facture1);
-        inv=setProcessType(inv);
+        inv = setProcessType(inv);
         future.complete(inv);
-       // Files.deleteIfExists(Paths.get(transformedXsltFilePath));
-       // Files.deleteIfExists(Paths.get(sourceXmlFilePath));
+
+        // Files.deleteIfExists(Paths.get(transformedXsltFilePath));
+        // Files.deleteIfExists(Paths.get(sourceXmlFilePath));
         return future;
     }
+
 
     /**
      * This method sets the process type of the invoice.

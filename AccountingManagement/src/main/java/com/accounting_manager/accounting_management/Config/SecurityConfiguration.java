@@ -23,34 +23,34 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf->csrf.disable())
+        http.csrf(csrf -> csrf.disable())
                 .cors(cors -> {}) // Active CORS avec configuration par défaut
-                .authorizeRequests()
-                .dispatcherTypeMatchers( DispatcherType.ERROR ).permitAll()
-                .requestMatchers(
-                        "/v2/api-docs",
-                        "/v3/api-docs",
-                        "/v3/api-docs/**",
-                        "/swagger-resources",
-                        "/swagger-resources/**",
-                        "/configuration/ui",
-                        "/configuration/security",
-                        "/swagger-ui/**",
-                        "/webjars/**",
-                        "/swagger-ui.html"
+                .authorizeHttpRequests(authorize -> authorize
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(
+                                "/v2/api-docs",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/swagger-resources",
+                                "/swagger-resources/**",
+                                "/configuration/ui",
+                                "/configuration/security",
+                                "/swagger-ui/**",
+                                "/webjars/**",
+                                "/swagger-ui.html"
+                        )
+                        .permitAll()
+                        .requestMatchers("/api/tests/**").permitAll() // Permet toutes les requêtes sous /api/tests/
+                        .anyRequest().authenticated()
                 )
-                .permitAll()
-                .requestMatchers("/api/*/admin","/api/*/permanent","/api/stats/","/api/tests/").hasAuthority("ADMIN")
-                .anyRequest().authenticated()
-                .and()
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
-                .authenticationEntryPoint((request, response, e) -> {
-
-                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    response.setContentType("application/json");
-                    response.getWriter().write("{ \"error\": \"UNAUTHORIZED.\" }");
-                }));
+                        .authenticationEntryPoint((request, response, e) -> {
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{ \"error\": \"UNAUTHORIZED.\" }");
+                        })
+                );
         return http.build();
     }
 }

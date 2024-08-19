@@ -20,14 +20,19 @@ public interface ThirdPartyRepositoryNoSql extends MongoRepository<ThirdPartyNoS
 
     Optional<ThirdPartyNoSql> findByPhoneNumber(String phoneNumber);
 
-    @Query("{ $and: [ { $or: [ " +
-            "{ $and: [ { 'firstname': { $regex: ?0, $options: 'i' } }, { 'lastname': { $regex: ?0, $options: 'i' } } ] }, " +
-            "{ 'legalName': { $regex: ?0, $options: 'i' } }, " +
-            "{ 'email': { $regex: ?0, $options: 'i' } }, " +
-            "{ 'nic': { $regex: ?0, $options: 'i' } }, " +
-            "{ 'siretNumber': { $regex: ?0, $options: 'i' } } ] }, " +
-            "{ $or: [ { 'discriminator': ?1 }, { ?1: { $exists: false } } ] } ] }")
+    @Query(value = "{ '$and': [ " +
+            " { '$or': [ " +
+            "   { 'firstname': { '$regex': ?0, '$options': 'i' } }, " +
+            "   { 'lastname': { '$regex': ?0, '$options': 'i' } }, " +
+            "   { 'legalName': { '$regex': ?0, '$options': 'i' } }, " +
+            "   { 'email': { '$regex': ?0, '$options': 'i' } }, " +
+            "   { 'nic': { '$regex': ?0, '$options': 'i' } }, " +
+            "   { 'siretNumber': { '$regex': ?0, '$options': 'i' } } " +
+            " ] }, " +
+            " { 'discriminator': { '$regex': ?1, '$options': 'i' } } " +
+            "] }")
     Page<ThirdPartyNoSql> findThirdParties(String query, String discriminator, Pageable pageable);
+
 
     @Query("{ 'accountants.clientId': ?0, " +
             "$or: [ { 'firstname': { $regex: ?1, $options: 'i' } }, " +
@@ -56,4 +61,7 @@ public interface ThirdPartyRepositoryNoSql extends MongoRepository<ThirdPartyNoS
 
     @Query("{ 'accountants.clientId': ?0 }")
     Long countAccountantsByClientId(String clientId);
+
+
+
 }

@@ -59,6 +59,7 @@ public class ThirdPartyControllerNoSql {
      * @param id ID of the third party to retrieve
      * @return ResponseEntity containing the retrieved third party
      */
+
     @Operation(summary = "Get Third Party by ID",
             description = "Retrieves a third party by its ID.")
     @ApiResponses(value = {
@@ -85,6 +86,8 @@ public class ThirdPartyControllerNoSql {
      * @param size  Page size
      * @return ResponseEntity containing a page of client third parties
      */
+
+
     @Operation(summary = "Get Accountant Clients",
             description = "Retrieves clients of an accountant third party by its ID.")
     @ApiResponses(value = {
@@ -113,6 +116,8 @@ public class ThirdPartyControllerNoSql {
      * @param size  Page size
      * @return ResponseEntity containing a page of accountant third parties
      */
+
+
     @Operation(summary = "Get Client Accountants",
             description = "Retrieves accountants of a client third party by its ID.")
     @ApiResponses(value = {
@@ -139,6 +144,8 @@ public class ThirdPartyControllerNoSql {
      * @param request Request body containing details of the client to create
      * @return ResponseEntity containing the created client third party
      */
+
+
     @Operation(summary = "Create Client for Accountant",
             description = "Creates a client for an accountant third party by its ID.")
     @ApiResponses(value = {
@@ -158,12 +165,18 @@ public class ThirdPartyControllerNoSql {
         }
     }
 
+
+
+
+
     /**
      * Deletes a third party by ID as an admin.
      *
      * @param id ID of the third party to delete
      * @return ResponseEntity indicating success
      */
+
+
     @Operation(summary = "Delete Third Party as Admin",
             description = "Deletes a third party by its ID as an admin.")
     @ApiResponses(value = {
@@ -182,6 +195,7 @@ public class ThirdPartyControllerNoSql {
      * @param clientId     ID of the client third party
      * @return ResponseEntity indicating success
      */
+
     @Operation(summary = "Delete Third Party as Accountant",
             description = "Deletes a third party as an accountant.")
     @ApiResponses(value = {

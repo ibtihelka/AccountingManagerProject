@@ -18,7 +18,7 @@ import java.util.Set;
 @AllArgsConstructor
 @SuperBuilder
 @Profile("nosql")
-@Document(collection = "thirdParties")
+@Document(collection = "ThirdParty")
 public class ThirdPartyNoSql {
 
     @Id

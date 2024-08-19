@@ -84,6 +84,9 @@ public class StatsControllerNoSql {
      * @param id ID of the user (third party) to retrieve statistics for
      * @return StatsResponse containing folder, user, and document statistics specific to the user
      */
+
+
+    /*
     @Operation(summary = "Get User Statistics",
             description = "Retrieves statistics for a specific user identified by ID.")
     @ApiResponses(value = {
@@ -109,4 +112,6 @@ public class StatsControllerNoSql {
                 .documentStats(documentsStats)
                 .build();
     }
+
+     */
 }

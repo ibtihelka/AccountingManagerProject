@@ -5,6 +5,7 @@ import com.accounting_manager.bank_statement_engine.Classes.facture.FactureInfo;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -55,6 +56,16 @@ public class BankStatement extends Document {
 //        this.invoiceDate = invoiceInfo.getDate();
 
         return this;
+    }
+
+    @Lob
+    @Column(name = "source_xml", columnDefinition = "LONGBLOB")
+    private byte[] sourceXml;
+
+
+
+    public void setSourceXml(byte[] sourceXml) {
+        this.sourceXml = sourceXml;
     }
 
 }

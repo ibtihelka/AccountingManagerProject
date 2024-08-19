@@ -61,4 +61,12 @@ public class Document {
     @JoinColumn(name = "fk_process_type",foreignKey=@ForeignKey(name = "fk_type_of_document_process"))
     private Type processType;
 
+
+   // @Lob
+   // @Column(name = "source_xml", columnDefinition = "LONGBLOB")
+   // private byte[] sourceXml;
+
+
+
+
 }

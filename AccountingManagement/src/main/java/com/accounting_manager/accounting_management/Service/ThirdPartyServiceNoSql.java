@@ -51,6 +51,9 @@ public class ThirdPartyServiceNoSql {
         return thirdPartyRepository.findThirdParties(query, discriminator, PageRequest.of(page, size));
     }
 
+
+
+
     public Optional<ThirdPartyNoSql> getThirdPartyById(String id) {
         return thirdPartyRepository.findById(id);
     }
@@ -154,4 +157,6 @@ public class ThirdPartyServiceNoSql {
     public Long getAccountantsCountByThirdPartyId(String clientId) {
         return this.thirdPartyRepository.countAccountantsByClientId(clientId);
     }
+
+
 }

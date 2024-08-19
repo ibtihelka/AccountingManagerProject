@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -25,6 +26,8 @@ public class TypeNoSql {
 
     private String label;
 
+
+    @Field(name = "id_third_party")
     @DBRef(lazy = true)  // Pour éviter le chargement immédiat des documents référencés
     private TypeNoSql parentType;
 
